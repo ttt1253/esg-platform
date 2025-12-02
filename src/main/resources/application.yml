@@ -1,15 +1,18 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/esg
-    username: esg
-    password: esgpass
+    # 설명: ${변수명:기본값} -> 서버에선 변수명을 쓰고, 없으면(로컬에선) 기본값을 쓴다.
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/esg}
+    username: ${SPRING_DATASOURCE_USERNAME:esg}
+    password: ${SPRING_DATASOURCE_PASSWORD:esgpass}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
+      # 배포 후에는 데이터가 날아가지 않게 update나 validate로 설정하는 게 안전합니다.
       ddl-auto: update
     properties:
-      hibernate.format_sql: true
-  thymeleaf:
-    cache: false
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 server:
   port: 8080
