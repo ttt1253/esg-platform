@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>데이터 관리 (Staging)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .table th, .table td { white-space: nowrap; font-size: 0.9rem; vertical-align: middle; }
+    </style>
+</head>
+<body class="p-4 bg-light">
+<div class="container-fluid bg-white p-4 rounded shadow-sm">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-0">📂 Staging 전체 데이터 관리</h3>
+            <small class="text-muted">staging_esg_full 테이블의 모든 내용을 조회하고 수정합니다.</small>
+        </div>
+        <div>
+            <button class="btn btn-success me-2"
+                    data-bs-toggle="modal" data-bs-target="#editModal"
+                    onclick="clearModal()">
+                <i class="bi bi-plus-lg"></i> 데이터 추가
+            </button>
+            <a href="/" class="btn btn-secondary">← 메인으로</a>
+        </div>
+    </div>
+
+    <form class="row g-2 mb-3" action="/admin/data" method="get">
+        <div class="col-auto" style="width: 300px;">
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" name="keyword" placeholder="회사명을 입력하세요..." th:value="${keyword}">
+            </div>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">검색</button>
+            <a th:if="${keyword != null and keyword != ''}" href="/admin/data" class="btn btn-outline-secondary">초기화</a>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover text-center table-striped">
+            <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>회사명</th>
+                <th>산업군</th>
+                <th>지역</th>
+                <th>연도</th>
+                <th class="bg-success bg-opacity-25 text-white">ESG 종합</th>
+                <th>Env (E)</th>
+                <th>Soc (S)</th>
+                <th>Gov (G)</th>
+                <th>매출</th>
+                <th>이익률</th>
+                <th style="position: sticky; right: 0; z-index: 2;">관리</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${list}">
+                <td th:text="${item.id}"></td>
+                <td class="fw-bold text-start" th:text="${item.companyName}"></td>
+                <td th:text="${item.industry}"></td>
+                <td th:text="${item.region}"></td>
+                <td class="fw-bold" th:text="${item.year}"></td>
+                <td class="fw-bold text-success" th:text="${item.esgOverall}"></td>
+                <td th:text="${item.esgEnvironmental}"></td>
+                <td th:text="${item.esgSocial}"></td>
+                <td th:text="${item.esgGovernance}"></td>
+                <td th:text="${item.revenue}"></td>
+                <td th:text="${item.profitMargin}"></td>
+                <td style="position: sticky; right: 0; background: #fff;">
+                    <div class="d-flex gap-1 justify-content-center">
+                        <button class="btn btn-sm btn-primary edit-btn"
+                                th:data-id="${item.id}"
+                                th:data-name="${item.companyName}"
+                                th:data-industry="${item.industry}"
+                                th:data-region="${item.region}"
+                                th:data-year="${item.year}"
+                                th:data-overall="${item.esgOverall}"
+                                th:data-e="${item.esgEnvironmental}"
+                                th:data-s="${item.esgSocial}"
+                                th:data-g="${item.esgGovernance}"
+                                th:data-revenue="${item.revenue}"
+                                th:data-profit="${item.profitMargin}"
+                                data-bs-toggle="modal" data-bs-target="#editModal">
+                            수정
+                        </button>
+                        <a th:href="@{|/admin/data/delete/${item.id}|}" class="btn btn-sm btn-danger" onclick="return confirm('삭제하시겠습니까?');">삭제</a>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(list)}">
+                <td colspan="12" class="py-5 text-muted">데이터가 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form th:action="@{/admin/data/update}" method="post">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">데이터 수정</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="modalId">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">회사명</label>
+                            <input type="text" name="companyName" id="modalName" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">연도</label>
+                            <input type="number" name="year" id="modalYear" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">산업군 (Industry)</label>
+                            <select name="industry" id="modalIndustry" class="form-select" required>
+                                <option value="" selected disabled>선택하세요</option>
+                                <option value="Consumer Goods">Consumer Goods</option>
+                                <option value="Energy">Energy</option>
+                                <option value="Finance">Finance</option>
+                                <option value="Healthcare">Healthcare</option>
+                                <option value="Manufacturing">Manufacturing</option>
+                                <option value="Retail">Retail</option>
+                                <option value="Technology">Technology</option>
+                                <option value="Transportation">Transportation</option>
+                                <option value="Utilities">Utilities</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">지역 (Region)</label>
+                            <select name="region" id="modalRegion" class="form-select" required>
+                                <option value="" selected disabled>선택하세요</option>
+                                <option value="Africa">Africa</option>
+                                <option value="Asia">Asia</option>
+                                <option value="Europe">Europe</option>
+                                <option value="Latin America">Latin America</option>
+                                <option value="Middle East">Middle East</option>
+                                <option value="North America">North America</option>
+                                <option value="Oceania">Oceania</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12"><hr></div>
+
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold text-success">ESG 종합 (Auto)</label>
+                            <input type="number" step="0.01" name="esgOverall" id="modalOverall"
+                                   class="form-control border-success bg-light" readonly>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Env (E)</label>
+                            <input type="number" step="0.01" name="esgEnvironmental" id="modalE"
+                                   class="form-control" oninput="calcEsg()">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Soc (S)</label>
+                            <input type="number" step="0.01" name="esgSocial" id="modalS"
+                                   class="form-control" oninput="calcEsg()">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Gov (G)</label>
+                            <input type="number" step="0.01" name="esgGovernance" id="modalG"
+                                   class="form-control" oninput="calcEsg()">
+                        </div>
+
+                        <div class="col-12"><hr></div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">매출 (Revenue)</label>
+                            <input type="number" step="0.01" name="revenue" id="modalRevenue" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">이익률 (Profit Margin)</label>
+                            <input type="number" step="0.01" name="profitMargin" id="modalProfit" class="form-control">
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary">저장하기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    function clearModal() {
+        document.querySelector('.modal-title').textContent = '데이터 추가';
+
+        document.getElementById('modalId').value = '';
+
+        document.getElementById('modalName').value = '';
+        document.getElementById('modalYear').value = '';
+        document.getElementById('modalIndustry').value = '';
+        document.getElementById('modalRegion').value = '';
+
+        document.getElementById('modalOverall').value = '';
+        document.getElementById('modalE').value = '';
+        document.getElementById('modalS').value = '';
+        document.getElementById('modalG').value = '';
+
+        document.getElementById('modalRevenue').value = '';
+        document.getElementById('modalProfit').value = '';
+    }
+
+    function calcEsg() {
+            const e = parseFloat(document.getElementById('modalE').value) || 0;
+            const s = parseFloat(document.getElementById('modalS').value) || 0;
+            const g = parseFloat(document.getElementById('modalG').value) || 0;
+
+            let avg = 0;
+
+            if (e > 0 || s > 0 || g > 0) {
+                avg = (e + s + g) / 3;
+            }
+
+            document.getElementById('modalOverall').value = avg.toFixed(2);
+        }
+
+    const editModal = document.getElementById('editModal');
+    editModal.addEventListener('show.bs.modal', event => {
+        const btn = event.relatedTarget;
+
+        if (btn.classList.contains('edit-btn')) {
+            document.querySelector('.modal-title').textContent = '데이터 수정';
+
+            document.getElementById('modalId').value = btn.getAttribute('data-id');
+            document.getElementById('modalName').value = btn.getAttribute('data-name');
+            document.getElementById('modalYear').value = btn.getAttribute('data-year');
+            document.getElementById('modalIndustry').value = btn.getAttribute('data-industry');
+            document.getElementById('modalRegion').value = btn.getAttribute('data-region');
+
+            document.getElementById('modalOverall').value = btn.getAttribute('data-overall');
+            document.getElementById('modalE').value = btn.getAttribute('data-e');
+            document.getElementById('modalS').value = btn.getAttribute('data-s');
+            document.getElementById('modalG').value = btn.getAttribute('data-g');
+
+            document.getElementById('modalRevenue').value = btn.getAttribute('data-revenue');
+            document.getElementById('modalProfit').value = btn.getAttribute('data-profit');
+        }
+    });
+</script>
+</body>
+</html>

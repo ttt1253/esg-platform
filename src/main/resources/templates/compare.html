@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${c1.name} + ' vs ' + ${c2.name} + ' 비교 분석'">기업 비교</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <style>
+        body { background-color: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); height: 100%; }
+        .card-header { background-color: #fff; border-bottom: 1px solid #eee; padding: 15px 20px; border-radius: 12px 12px 0 0 !important; }
+        .chart-container { position: relative; height: 250px; width: 100%; }
+
+        .theme-c1 { color: #0d6efd; }
+        .theme-c2 { color: #dc3545; }
+
+        .table th { font-size: 0.85rem; text-align: center; background-color: #f8f9fa; }
+        .table td { font-size: 0.9rem; text-align: center; vertical-align: middle; }
+    </style>
+</head>
+<body>
+
+<div class="container py-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <span class="badge bg-primary me-2" th:text="${c1.name}">기업1</span>
+                <span class="text-muted fs-5">vs</span>
+                <span class="badge bg-danger ms-2" th:text="${c2.name}">기업2</span>
+            </h2>
+            <p class="text-muted mb-0">두 기업의 연도별 ESG 성과 상세 비교</p>
+        </div>
+        <a href="/" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> 목록으로
+        </a>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card border-primary border-opacity-25">
+                <div class="card-header">
+                    <h5 class="mb-0 fw-bold text-primary">
+                        <i class="bi bi-building"></i> <span th:text="${c1.name}"></span> 데이터
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover table-striped mb-0" id="c1Table">
+                        <thead>
+                        <tr><th>연도</th><th>Env (E)</th><th>Soc (S)</th><th>Gov (G)</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="s : ${s1}">
+                            <td class="fw-bold" th:text="${s.year}"></td>
+                            <td th:text="${s.eScore}"></td>
+                            <td th:text="${s.sScore}"></td>
+                            <td th:text="${s.gScore}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-danger border-opacity-25">
+                <div class="card-header">
+                    <h5 class="mb-0 fw-bold text-danger">
+                        <i class="bi bi-building"></i> <span th:text="${c2.name}"></span> 데이터
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover table-striped mb-0" id="c2Table">
+                        <thead>
+                        <tr><th>연도</th><th>Env (E)</th><th>Soc (S)</th><th>Gov (G)</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="s : ${s2}">
+                            <td class="fw-bold" th:text="${s.year}"></td>
+                            <td th:text="${s.eScore}"></td>
+                            <td th:text="${s.sScore}"></td>
+                            <td th:text="${s.gScore}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h5 class="mb-0 fw-bold text-success"><i class="bi bi-tree"></i> 환경 (Environment)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="esgEChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h5 class="mb-0 fw-bold text-info"><i class="bi bi-people"></i> 사회 (Social)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="esgSChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h5 class="mb-0 fw-bold text-warning"><i class="bi bi-bank"></i> 지배구조 (Governance)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="esgGChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:inline="javascript">
+    const c1Name = /*[[${c1.name}]]*/ "Company 1";
+    const c2Name = /*[[${c2.name}]]*/ "Company 2";
+
+    const c1Map = {}, c2Map = {};
+
+    function parseTable(tableId, mapObj) {
+        document.querySelectorAll('#' + tableId + ' tbody tr').forEach(tr => {
+            const tds = tr.querySelectorAll('td');
+            if(tds.length >= 4) {
+                const y = tds[0].textContent.trim();
+                mapObj[y] = {
+                    e: parseFloat(tds[1].textContent.trim()),
+                    s: parseFloat(tds[2].textContent.trim()),
+                    g: parseFloat(tds[3].textContent.trim())
+                };
+            }
+        });
+    }
+
+    parseTable('c1Table', c1Map);
+    parseTable('c2Table', c2Map);
+
+    const yearSet = new Set([...Object.keys(c1Map), ...Object.keys(c2Map)]);
+    const years = Array.from(yearSet).sort();
+
+    const dataPoints = {
+        e: { c1: [], c2: [] },
+        s: { c1: [], c2: [] },
+        g: { c1: [], c2: [] }
+    };
+
+    years.forEach(y => {
+        dataPoints.e.c1.push(c1Map[y] ? c1Map[y].e : null);
+        dataPoints.e.c2.push(c2Map[y] ? c2Map[y].e : null);
+
+        dataPoints.s.c1.push(c1Map[y] ? c1Map[y].s : null);
+        dataPoints.s.c2.push(c2Map[y] ? c2Map[y].s : null);
+
+        dataPoints.g.c1.push(c1Map[y] ? c1Map[y].g : null);
+        dataPoints.g.c2.push(c2Map[y] ? c2Map[y].g : null);
+    });
+
+    function createComparisonChart(canvasId, label, dataC1, dataC2) {
+        new Chart(document.getElementById(canvasId), {
+            type: 'line',
+            data: {
+                labels: years,
+                datasets: [
+                    {
+                        label: c1Name,
+                        data: dataC1,
+                        borderColor: '#0d6efd', // Blue
+                        backgroundColor: '#0d6efd',
+                        tension: 0.3,
+                        pointStyle: 'circle',
+                        pointRadius: 4
+                    },
+                    {
+                        label: c2Name,
+                        data: dataC2,
+                        borderColor: '#dc3545', // Red
+                        backgroundColor: '#dc3545',
+                        tension: 0.3,
+                        pointStyle: 'rectRot',
+                        pointRadius: 5,
+                        borderDash: [5, 5] // 점선 처리
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true } },
+                },
+                scales: {
+                    y: { beginAtZero: true, suggestedMax: 100, grid: { color: '#f0f0f0' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    createComparisonChart('esgEChart', 'Environment', dataPoints.e.c1, dataPoints.e.c2);
+    createComparisonChart('esgSChart', 'Social', dataPoints.s.c1, dataPoints.s.c2);
+    createComparisonChart('esgGChart', 'Governance', dataPoints.g.c1, dataPoints.g.c2);
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/esg
+    username: esg
+    password: esgpass
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate.format_sql: true
+  thymeleaf:
+    cache: false
+
+server:
+  port: 8080

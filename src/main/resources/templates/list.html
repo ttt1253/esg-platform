@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>기업 목록 관리</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        body { background-color: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        .card { border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-radius: 10px; }
+        .form-label { font-weight: 600; font-size: 0.9rem; color: #555; }
+        .table th { background-color: #f1f3f5; border-bottom: 2px solid #dee2e6; font-weight: 600; }
+        .page-link { color: #495057; }
+        .page-item.active .page-link { background-color: #0d6efd; border-color: #0d6efd; }
+        .multi-select-box { height: 120px; } /* 멀티 셀렉트 박스 높이 고정 */
+    </style>
+</head>
+<body>
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark"><i class="bi bi-building"></i> ESG 기업 관리</h2>
+
+        <div class="d-flex gap-2 align-items-center">
+            <span class="text-muted small me-2" sec:authentication="name">사용자</span>님
+            <span class="badge bg-secondary me-3" sec:authentication="principal.authorities">권한</span>
+
+            <div sec:authorize="hasRole('ROLE_ADMIN')" class="btn-group me-2">
+                <a href="/admin/data" class="btn btn-outline-danger">
+                    <i class="bi bi-database-gear"></i> 데이터 관리
+                </a>
+                <a href="/admin/users" class="btn btn-outline-dark">
+                    <i class="bi bi-people-fill"></i> 유저 관리
+                </a>
+                <a href="/admin/history" class="btn btn-outline-secondary">
+                    <i class="bi bi-clock-history"></i> 시스템 로그
+                </a>
+            </div>
+
+            <a sec:authorize="hasRole('ROLE_CORP')" href="/corp/data" class="btn btn-success">
+                <i class="bi bi-building-check"></i> 내 기업 관리
+            </a>
+
+            <a href="/user/logout" class="btn btn-outline-secondary">로그아웃</a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Total Companies</h6>
+                        <h2 class="fw-bold mb-0" th:text="${totalCompanies} + ' 개'">0 개</h2>
+                    </div>
+                    <i class="bi bi-building display-4 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Avg ESG Score</h6>
+                        <h2 class="fw-bold mb-0" th:text="${avgScore} + ' 점'">0.0 점</h2>
+                    </div>
+                    <i class="bi bi-bar-chart-line display-4 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Top Performer</h6>
+                        <div class="fw-bold fs-4" th:text="${topCompany}">Company</div>
+                        <small class="fw-bold" th:text="'Score: ' + ${topScoreVal}">Score: 0</small>
+                    </div>
+                    <i class="bi bi-trophy display-4 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 text-secondary"><i class="bi bi-funnel"></i> 검색 및 필터</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" action="/">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">회사명 검색</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" name="q" placeholder="회사명을 입력하세요..." th:value="${q}">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">산업 선택 (다중 선택 가능)</label>
+                        <select name="industries" multiple class="form-select multi-select-box">
+                            <option th:each="ind : ${industryList}"
+                                    th:value="${ind}"
+                                    th:text="${ind}"
+                                    th:selected="${industries != null and industries.contains(ind)}">
+                            </option>
+                        </select>
+                        <div class="form-text text-muted small">Ctrl(Mac은 Cmd) 키를 누르고 클릭하면 여러 개를 선택할 수 있습니다.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">지역 선택 (다중 선택 가능)</label>
+                        <select name="regions" multiple class="form-select multi-select-box">
+                            <option th:each="reg : ${regionList}"
+                                    th:value="${reg}"
+                                    th:text="${reg}"
+                                    th:selected="${regions != null and regions.contains(reg)}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 mt-4">
+                        <div class="d-flex flex-wrap gap-2 align-items-end p-3 bg-light rounded">
+                            <div class="flex-grow-1 d-flex gap-2">
+                                <div>
+                                    <label class="form-label small mb-1">정렬 기준</label>
+                                    <select name="sortBy" class="form-select form-select-sm">
+                                        <option th:value="name" th:selected="${sortBy=='name'}">이름순</option>
+                                        <option th:value="industry" th:selected="${sortBy=='industry'}">산업순</option>
+                                        <option th:value="region" th:selected="${sortBy=='region'}">지역순</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label small mb-1">정렬 방향</label>
+                                    <select name="dir" class="form-select form-select-sm">
+                                        <option th:value="asc"  th:selected="${dir=='asc'}">오름차순</option>
+                                        <option th:value="desc" th:selected="${dir=='desc'}">내림차순</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label small mb-1">출력 개수</label>
+                                    <select name="size" class="form-select form-select-sm">
+                                        <option th:each="s: ${#numbers.sequence(5, 30, 5)}"
+                                                th:value="${s}" th:text="${s} + '개씩'"
+                                                th:selected="${s==size}"></option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-search"></i> 조회하기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead>
+                    <tr>
+                        <th scope="col" class="text-center" style="width: 60px;">#</th>
+                        <th scope="col">회사명</th>
+                        <th scope="col">산업</th>
+                        <th scope="col">지역</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="c, stat : ${page.content}">
+                        <td class="text-center text-muted" th:text="${page.number * page.size + stat.index + 1}">1</td>
+                        <td>
+                            <a th:href="@{|/companies/${c.id}|}" th:text="${c.name}" class="text-decoration-none fw-bold text-dark">name</a>
+                        </td>
+                        <td><span class="badge bg-info text-dark bg-opacity-25 border border-info border-opacity-25" th:text="${c.industry}">-</span></td>
+                        <td><span class="text-secondary" th:text="${c.region}">-</span></td>
+                    </tr>
+                    <tr th:if="${page.content.size()==0}">
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <i class="bi bi-exclamation-circle display-6 d-block mb-3"></i>
+                            조건에 맞는 데이터가 없습니다.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card-footer bg-white py-3" th:if="${page.totalPages > 1}">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item" th:classappend="${page.first} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/(page=${page.number-1},size=${size},q=${q},industries=${industries},regions=${regions},sortBy=${sortBy},dir=${dir})}">
+                            <i class="bi bi-chevron-left"></i> 이전
+                        </a>
+                    </li>
+
+                    <li class="page-item disabled">
+                        <span class="page-link text-dark" th:text="${page.number+1} + ' / ' + ${page.totalPages}"></span>
+                    </li>
+
+                    <li class="page-item" th:classappend="${page.last} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/(page=${page.number+1},size=${size},q=${q},industries=${industries},regions=${regions},sortBy=${sortBy},dir=${dir})}">
+                            다음 <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
