@@ -69,4 +69,4 @@
 
 1. **Connect URL**
    ```bash
-   "https://esg-platform-web.onrender.com/"
+   https://esg-platform-web.onrender.com
