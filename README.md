@@ -62,11 +62,3 @@
 |     ![Main page](./images/mainpage.jpeg)      | ![Data Manage](./images/datamanage.jpeg) |
 |              **내 기업 관리 (Corp)**               |           **시스템 작업 이력 (Log)**            |
 | ![My Corp Manage](./images/mycorpmanage.jpeg) |  ![System Log](./images/systemlog.jpeg)  |
-
----
-
-## ⚙️ How to Run
-
-1. **Connect URL**
-   ```bash
-   https://esg-platform-web.onrender.com
